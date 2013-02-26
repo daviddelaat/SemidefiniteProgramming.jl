@@ -1,4 +1,3 @@
-load("src/SDP")
 using SDP
 
 sdp = SparseSDP([10., 20.], [Rel(0, 1, 1, 1, 1.0) 

@@ -1,1 +1,1 @@
-Binding to semidefinite programming libraries (sdpa, csdp).
+Julia interface to semidefinite programming libraries (sdpa, csdp).

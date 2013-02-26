@@ -1,8 +1,18 @@
 module SDP
 
-import Base.print, Base.show
+import 
+    Base.print, 
+    Base.show
 
-export Rel, SparseSDP, sdpa, sdpa_qd, sdpa_gmp, csdp, print, show
+export 
+    Rel, 
+    SparseSDP, 
+    sdpa, 
+    sdpa_qd, 
+    sdpa_gmp, 
+    csdp, 
+    sdp, 
+    parse_sdpa_sparse
 
 type Rel{T<:Number}
     nr::Int
@@ -70,7 +80,19 @@ function show(io::IO, sdp::SparseSDP)
     print(io, sdp)
 end
 
-function sdpa(sdp::SparseSDP, app)
+#function parse_sdpa_sparse(io::IO)
+#    for l in readlines(io)
+#        println(l)
+#    end
+#end
+
+#function parse_sdpa_sparse(filename::String)
+#    file = open(filename)
+#    parse_sdpa_sparse(file)
+#    close(file)
+#end
+
+function sdpa_generic(sdp::SparseSDP, app)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)
@@ -84,11 +106,11 @@ function sdpa(sdp::SparseSDP, app)
     return nothing
 end
 
-sdpa(sdp::SparseSDP) = sdpa(sdp, "sdpa")
+sdpa(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa")
 
-sdpa_qd(sdp::SparseSDP) = sdpa(sdp, "sdpa_qd")
+sdpa_qd(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa_qd")
 
-sdpa_gmp(sdp::SparseSDP) = sdpa(sdp, "sdpa_gmp")
+sdpa_gmp(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa_gmp")
 
 function csdp(sdp::SparseSDP)
     datafname, dataio = mktemp()
