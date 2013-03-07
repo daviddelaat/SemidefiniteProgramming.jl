@@ -7,13 +7,19 @@ import
 export 
     Rel, 
     SparseSDP, 
-    sdpa, 
-    sdpa_qd, 
-    sdpa_gmp, 
-    csdp, 
-    sdp, 
-    parse_sdpa_sparse
+    SDPSolver,
+    SDPA,
+    SDPAQD,
+    SDPAGMP,
+    CSDP,
+    solve
 
+
+    
+    
+    
+# Sparse SDPA format
+    
 type Rel{T<:Number}
     nr::Int
     blocknr::Int
@@ -76,27 +82,50 @@ function print(io::IO, sdp::SparseSDP)
 end
 
 function show(io::IO, sdp::SparseSDP)
-    println("Sparse SDP:")
+    println("$(length(sdp.blocksizes))-block sparse semidefinite program:")
     print(io, sdp)
 end
 
-#function parse_sdpa_sparse(io::IO)
-#    for l in readlines(io)
-#        println(l)
-#    end
-#end
 
-#function parse_sdpa_sparse(filename::String)
-#    file = open(filename)
-#    parse_sdpa_sparse(file)
-#    close(file)
-#end
 
-function sdpa_generic(sdp::SparseSDP, app)
+
+# Solvers
+
+abstract SDPSolver
+
+abstract SDPAGEN <: SDPSolver
+
+type SDPA <: SDPAGEN
+    speed::Int
+    executable::ASCIIString
+end
+SDPA{T<:Integer}(speed::T) = SDPA(speed, "sdpa")
+SDPA() = SDPA(0)
+
+type SDPAQD <: SDPAGEN
+    speed::Int
+    executable::ASCIIString
+end
+SDPAQD{T<:Integer}(speed::T) = SDPAQD(speed, "sdpa_qd")
+SDPAQD() = SDPAQD(0)
+
+type SDPAGMP <: SDPAGEN
+    speed::Int
+    executable::ASCIIString
+end
+SDPAGMP(speed::Int) = SDPAGMP(speed, "sdpa_gmp")
+SDPAGMP() = SDPAGMP(0)
+
+type CSDP <: SDPSolver
+    executable::ASCIIString
+end
+CSDP() = CSDP("csdp")
+
+function solve{T<:SDPAGEN}(sdp::SparseSDP, solver::T)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)
-    for l in each_line(`$app -ds $datafname -o /dev/null`)
+    for l in each_line(`$(solver.executable) -ds $datafname -o /dev/null`)
         if begins_with(l, "objValPrimal = ")
             close(dataio)
             return float(split(l, " = ")[2])
@@ -106,13 +135,7 @@ function sdpa_generic(sdp::SparseSDP, app)
     return nothing
 end
 
-sdpa(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa")
-
-sdpa_qd(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa_qd")
-
-sdpa_gmp(sdp::SparseSDP) = sdpa_generic(sdp, "sdpa_gmp")
-
-function csdp(sdp::SparseSDP)
+function solve(sdp::SparseSDP, solver::CSDP)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)    
