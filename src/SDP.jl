@@ -89,6 +89,8 @@ end
 
 
 
+
+
 # Solvers
 
 abstract SDPSolver
@@ -139,7 +141,7 @@ function solve(sdp::SparseSDP, solver::CSDP)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)    
-    for l in each_line(`csdp $datafname /dev/null`)
+    for l in each_line(`$(solver.executable) $datafname /dev/null`)
         if begins_with(l, "Primal objective value: ")
             close(dataio)
             return float(split(l, ": ")[2])
