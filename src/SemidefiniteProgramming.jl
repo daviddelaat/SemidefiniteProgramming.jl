@@ -1,4 +1,4 @@
-module SDP
+module SemidefiniteProgramming
 
 import 
     Base.print, 
