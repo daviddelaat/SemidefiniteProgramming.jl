@@ -20,7 +20,7 @@ export
     
 # Sparse SDPA format
     
-type Rel{T<:Number}
+immutable Rel{T<:Number}
     nr::Int
     blocknr::Int
     i::Int
