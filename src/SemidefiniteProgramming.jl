@@ -97,28 +97,28 @@ abstract SDPSolver
 
 abstract SDPAGEN <: SDPSolver
 
-type SDPA <: SDPAGEN
+immutable SDPA <: SDPAGEN
     speed::Int
     executable::ASCIIString
 end
 SDPA{T<:Integer}(speed::T) = SDPA(speed, "sdpa")
 SDPA() = SDPA(0)
 
-type SDPAQD <: SDPAGEN
+immutable SDPAQD <: SDPAGEN
     speed::Int
     executable::ASCIIString
 end
 SDPAQD{T<:Integer}(speed::T) = SDPAQD(speed, "sdpa_qd")
 SDPAQD() = SDPAQD(0)
 
-type SDPAGMP <: SDPAGEN
+immutable SDPAGMP <: SDPAGEN
     speed::Int
     executable::ASCIIString
 end
 SDPAGMP(speed::Int) = SDPAGMP(speed, "sdpa_gmp")
 SDPAGMP() = SDPAGMP(0)
 
-type CSDP <: SDPSolver
+immutable CSDP <: SDPSolver
     executable::ASCIIString
 end
 CSDP() = CSDP("csdp")
@@ -127,7 +127,7 @@ function solve{T<:SDPAGEN}(sdp::SparseSDP, solver::T)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)
-    for l in each_line(`$(solver.executable) -ds $datafname -o /dev/null`)
+    for l in eachline(`$(solver.executable) -ds $datafname -o /dev/null`)
         if begins_with(l, "objValPrimal = ")
             close(dataio)
             return float(split(l, " = ")[2])
@@ -141,7 +141,7 @@ function solve(sdp::SparseSDP, solver::CSDP)
     datafname, dataio = mktemp()
     print(dataio, sdp)
     flush(dataio)    
-    for l in each_line(`$(solver.executable) $datafname /dev/null`)
+    for l in eachline(`$(solver.executable) $datafname /dev/null`)
         if begins_with(l, "Primal objective value: ")
             close(dataio)
             return float(split(l, ": ")[2])
