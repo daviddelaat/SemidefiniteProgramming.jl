@@ -2,7 +2,9 @@ module SemidefiniteProgramming
 
 import 
     Base.print, 
-    Base.show
+    Base.show,
+    Base.getindex,
+    Base.setindex!
     
 export 
     SparseSDP,
@@ -14,67 +16,108 @@ export
     nrels,
     rhs,
     writesdpasparse,
+    parsesdpasparse,
     SDPSolver,
     SDPA,
     SDPAQD,
     SDPAGMP,
     CSDP,
     solve
+
    
     
     
-    
+type SparseSymmetricMatrix{T<:Number}
+    m::Dict{(Int, Int), T}
+end
 
-    
-    
-    
+SparseSymmetricMatrix(T) = SparseSymmetricMatrix{T}(Dict{(Int,Int), T)
+SparseSymmetricMatrix() = SparseSymmetricMatrix(Float64)
+
+function setindex!{T<:Number}(m::SparseSymmetricMatrix{T}, v::T, i::Int, j::Int)
+    if i <= j
+        m[(i, j)] = v
+    else
+        m[(j, i)] = v
+    end
+end
+
+function getindex{T<:Number}(m::SparseSymmetricMatrix{T}, i::Int, j::Int)
+    if i <= j
+        get(m, (i, j), zero(T))
+    else
+        get(m, (j, i), zero(T))
+    end
+end
+
+
+
+
+type SparseSymmetricBlockMatrix{T<:Number}
+    blocks::Dict{Int, SparseSymmetricMatrix{T}}
+end
+
+SparseSymmetricBlockMatrix(T::Number) = SparseSymmetricBlockMatrix(Dict{Int, SparseSymmetricMatrix{T}}())
+SparseSymmetricBlockMatrix() = SparseSymmetricBlockMatrix(Float64)
+
+function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, v::T, bi::Int, i::Int, j::Int)
+    get(bm.blocks, bi, SparseSymmetricMatrix(T))[i, j] = v
+end
+
+function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, m::SparseSymmetricMatrix{T}, bi::Int)
+    bm.blocks[bi] = m
+end
+
+function getindex{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, bi::Int, i::Int, j::Int)
+    get(bm.blocks, bi, SparseSymmetricMatrix(T))[i, j]
+end
+
+
+
+
 type SparseSDP{T<:Number}
-    rhs::Dict{Int, T}
-    rels::Dict{(Int, Int, Int, Int), T}
+    c::SparseSymmetricBlockMatrix{T}
+    as::Dict{Int, SparseSymmetricBlockMatrix{T}}
+    bs::Dict{Int, T}
 end
 
-SparseSDP{T<:Number}() = SparseSDP(Dict{Int, T}(), Dict{(Int, Int, Int, Int), T}())
-SparseSDP() = SparseSDP(Dict{Int, Float64}(), Dict{(Int, Int, Int, Int), Float64}())
+SparseSDP(T::Number) = SparseSDP(SparseSymmetricBlockMatrix(T), 
+                                 Dict{Int, SparseSymmetricBlockMatrix{T}}(),
+                                 Dict{Int, T}())
 
-setrhs!{T<:Number}(sdp::SparseSDP{T}, ri::Int, v::T) = sdp.rhs[ri] = v       
-getrhs(sdp::SparseSDP, ri::Int) = sdp.rhs[ri]
+SparseSDP() = SparseSDP(Float64)
 
-function setrel!{T<:Number}(sdp::SparseSDP{T}, ri::Int, bi::Int, i::Int, j::Int, v::T) 
-    if i <= j
-        sdp.rels[(ri, bi, i, j)] = v
-    else
-        sdp.rels[(ri, bi, j, i)] = v
-    end
+setc!{T<:Number}(sdp::SparseSDP{T}, c::SparseBlockMatrix{T}) = sdp.c = c
+
+function setc!{T<:Number}(sdp::SparseSDP{T}, bi::Int, m::SparseSymmetricMatrix{T})
+    sdp.c[bi] = m
 end
 
-setrel!{T<:Number}(sdp::SparseSDP{T}, ri::Int, i::Int, j::Int, v::T) = setrel!(sdp, ri, 1, i, j, v)
-
-function getrel(sdp::SparseSDP, ri::Int, bi::Int, i::Int, j::Int)
-    if i <= j
-        sdp.rels[(ri, bi, i, j)]
-    else
-        sdp.rels[(ri, bi, j, i)]
-    end
+function setc!{T<:Number}(sdp::SparseSDP{T}, bi::Int, i::Int, j::Int, v::T)
+    sdp.c[bi, i, j] = v
 end
 
-getrel(sdp::SparseSDP, ri::Int, i::Int, j::Int) = getrel(sdp, ri, 1, i, j)
+getc(sdp::SparseSDP) = sdp.c
 
-function setrel!{T<:Number}(sdp::SparseSDP{T}, ri::Int, bi::Int, m::Matrix{T}) 
-    for i = 1:dims(m)[1]
-        for j = 1:i
-            if m[i, j] != zero(T)
-                setrel!(sdp, ri, bi, i, j) = m[i, j]
-            end
-        end
-    end 
+function seta!{T<:Number}(sdp::SparseSDP{T}, ri::Int, bi::Int, i::Int, j::Int, v::T)
+    if has(sdp.as, ri)
+        sdp.as[ri][bi, i, j] = v
+    else 
+    sdp.tcs[ri] = tc
 end
 
-setrel!{T<:Number}(sdp::SparseSDP{T}, ri::Int, m::Matrix{T}) = setrel!(sdp, ri, 1, m)
+geta(sdp::SparseSDP, ri::Int) = sdp.tcs[ri]
+
+geta(sdp::SparseSDP, ri::Int, bi::Int) = sdp. 
+
+
+
 
 function blocksizes(sdp::SparseSDP)
     bsizes = Dict{Int, Int}()
     mbi = 0
-    for (ri, bi, i, j) in keys(sdp.rels)
+    for (ri, bmat) in sdp.as
+        for 
         if bi > mbi
             mbi = bi
         end
@@ -90,19 +133,19 @@ function blocksizes(sdp::SparseSDP)
     bsizeslist
 end
 
-function nrels(sdp::SparseSDP)
-    c = -1
-    for (ri, bi, i, j) in keys(sdp.rels)
-        if ri > c
-            c = ri
+function m(sdp::SparseSDP)
+    mm = 0
+    for ri in keys(sdp.as)
+        if ri > mm
+            mm = ri
         end
     end
-    for ri in keys(sdp.rhs)
-        if ri > c
-            c = ri
+    for ri in keys(sdp.bs)
+        if ri > mm
+            mm = ri
         end
     end
-    c    
+    mm
 end
 
 function rhs(sdp::SparseSDP)
@@ -149,6 +192,30 @@ function writesdpasparse(io::IO, sdp::SparseSDP)
         println(io)  
     end
 end
+
+function parsesdpasparse(io::IO)
+    sdp = SparseSDP()
+    
+    s = 1
+    for l in readlines(io)
+        println(l)
+        if !beginswith(l, '#')
+            if s == 4
+                t = split(l) 
+                for i = 1:length(t)
+                     sdp[i] = parsefloat(t[i])
+                end
+            elseif s > 4
+                t = split(l)
+                sdp[parseint(t[1]), parseint(t[2]), parseint(t[3]), parseint(t[4])] = parsefloat(t[5])
+            end 
+            s += 1
+        end
+    end
+    
+    sdp
+end
+
 
 function show{T<:Number}(io::IO, sdp::SparseSDP{T})
     bsizes = blocksizes(sdp)
