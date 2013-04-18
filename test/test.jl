@@ -7,9 +7,9 @@ setc!(sdp, 1, 2, 2, 2.0)
 setc!(sdp, 2, :x, :x, 3.0)
 setc!(sdp, 2, 2, 2, 4.0)
 
-setb!(sdp, 1, 10.0)
-seta!(sdp, 1, 1, 1, 1, 1.0)
-seta!(sdp, 1, 1, 2, 2, 1.0)
+setb!(sdp, 0.0, 10.0)
+seta!(sdp, 0.0, 1, 1, 1, 1.0)
+seta!(sdp, 0.0, 1, 2, 2, 1.0)
 
 setb!(sdp, 2, 20.0)
 seta!(sdp, 2, 2, :x, :x, 5.0)
