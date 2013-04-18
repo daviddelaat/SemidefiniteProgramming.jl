@@ -20,9 +20,8 @@ export
     setc!,
     getc,
     m,
-    rhs,
     writesdpasparse,
-    parsesdpasparse,
+    readsdpasparse,
     SDPSolver,
     SDPA,
     SDPAQD,
@@ -254,7 +253,7 @@ function writesdpasparse(io::IO, sdp::SparseSDP)
     end           
 end
 
-function parsesdpasparse(io::IO)
+function readsdpasparse(io::IO)
     sdp = SparseSDP()
     
     s = 1
@@ -264,11 +263,20 @@ function parsesdpasparse(io::IO)
             if s == 4
                 t = split(l) 
                 for i = 1:length(t)
-                     sdp[i] = parsefloat(t[i])
+                     setb!(sdp, i, parsefloat(t[i]))
                 end
             elseif s > 4
                 t = split(l)
-                sdp[parseint(t[1]), parseint(t[2]), parseint(t[3]), parseint(t[4])] = parsefloat(t[5])
+                ri = parseint(t[1])
+                bi = parseint(t[2])
+                i = parseint(t[3])
+                j = parseint(t[4])
+                v = parsefloat(t[5])
+                if ri == 0
+                    setc!(sdp, bi, i, j, v)
+                else
+                    seta!(sdp, ri, bi, i, j, v)
+                end
             end 
             s += 1
         end
