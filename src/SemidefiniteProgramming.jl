@@ -35,27 +35,34 @@ export
     
 type SparseSymmetricMatrix{T<:Number}
     entries::Dict{(Any, Any), T}
+    indices::Set
 end
 
-SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix{T}(Dict{(Any,Any),T}())
+SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix{T}(Dict{(Any,Any),T}(), Set())
 SparseSymmetricMatrix() = SparseSymmetricMatrix(Float64)
+
+entries(m::SparseSymmetricMatrix) = m.entries
+indices(m::SparseSymmetricMatrix) = m.indices
 
 function setindex!{T<:Number}(m::SparseSymmetricMatrix{T}, v::T, i, j)
     if method_exists(isless, (typeof(i), typeof(j)))
         if i <= j
-            m.entries[(i, j)] = v
+            entries(m)[(i, j)] = v
         else
-            m.entries[(j, i)] = v
+            entries(m)[(j, i)] = v
         end
     elseif method_exists(hash, (typeof(i),)) && method_exists(hash, (typeof(j),)) 
         if hash(i) <= hash(j)
-            m.entries[(i, j)] = v
+            entries(m)[(i, j)] = v
         else
-            m.entries[(j, i)] = v
+            entries(m)[(j, i)] = v
         end
     else
-        error("indices must be comparable (isless) or hashable (hash)")
+        entries(m)[(i, j)] = v
+        entries(m)[(j, i)] = v
     end
+    add!(indices(m), i)
+    add!(indices(m), j)
 end
 
 function getindex{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
@@ -72,7 +79,7 @@ function getindex{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
             get(m.entries, (j, i), zero(T))
         end
     else
-        error("indices must be comparable (isless) or hashable (hash)")
+        get(m.entries, (i, j), zero(T))
     end
 end
 
@@ -89,9 +96,6 @@ function size(m::SparseSymmetricMatrix)
     end
     return max(length(is), length(js))
 end
-
-#delete!(m::SparseSymmetricMatrix, i, j) = delete!(m.entries, (i, j))
-
 
 function smallestavailableindex(ms::Vector{SparseSymmetricMatrix})
     s = 1
@@ -112,13 +116,13 @@ end
 
 
 type SparseSymmetricBlockMatrix{T<:Number}
-    blocks::Dict{Int, SparseSymmetricMatrix{T}}
+    blocks::Dict{Any,SparseSymmetricMatrix{T}}
 end
 
-SparseSymmetricBlockMatrix(T::Type) = SparseSymmetricBlockMatrix(Dict{Int, SparseSymmetricMatrix{T}}())
+SparseSymmetricBlockMatrix(T::Type) = SparseSymmetricBlockMatrix(Dict{Any,SparseSymmetricMatrix{T}}())
 SparseSymmetricBlockMatrix() = SparseSymmetricBlockMatrix(Float64)
 
-function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, v::T, bi::Int, i, j)
+function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, v::T, bi, i, j)
     if has(bm.blocks, bi)
         bm.blocks[bi][i, j] = v
     else
@@ -132,7 +136,7 @@ function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, m::SparseSymmet
     bm.blocks[bi] = m
 end
 
-function getindex(bm::SparseSymmetricBlockMatrix, bi::Int, i, j)
+function getindex(bm::SparseSymmetricBlockMatrix, bi, i, j)
     get(bm.blocks, bi, SparseSymmetricMatrix(T))[i, j]
 end
 
@@ -149,8 +153,8 @@ next(m::SparseSymmetricBlockMatrix, state) = next(m.blocks, state)
 
 type SparseSDP{T<:Number}
     c::SparseSymmetricBlockMatrix{T}
-    as::Dict{Any, SparseSymmetricBlockMatrix{T}}
-    bs::Dict{Any, T}
+    as::Dict{Any,SparseSymmetricBlockMatrix{T}}
+    bs::Dict{Any,T}
 end
 
 SparseSDP(T::Type) = SparseSDP(SparseSymmetricBlockMatrix(T), 
@@ -161,17 +165,17 @@ SparseSDP() = SparseSDP(Float64)
 
 setc!{T<:Number}(sdp::SparseSDP{T}, c::SparseSymmetricBlockMatrix{T}) = sdp.c = c
 
-function setc!{T<:Number}(sdp::SparseSDP{T}, bi::Int, m::SparseSymmetricMatrix{T})
+function setc!{T<:Number}(sdp::SparseSDP{T}, bi, m::SparseSymmetricMatrix{T})
     sdp.c[bi] = m
 end
 
-function setc!{T<:Number}(sdp::SparseSDP{T}, bi::Int, i, j, v::T)
+function setc!{T<:Number}(sdp::SparseSDP{T}, bi, i, j, v::T)
     sdp.c[bi, i, j] = v
 end
 
 getc(sdp::SparseSDP) = sdp.c
 
-function seta!{T<:Number}(sdp::SparseSDP{T}, ri, bi::Int, i, j, v::T)
+function seta!{T<:Number}(sdp::SparseSDP{T}, ri, bi, i, j, v::T)
     if has(sdp.as, ri)
         sdp.as[ri][bi, i, j] = v
     else
@@ -183,7 +187,7 @@ end
 
 geta(sdp::SparseSDP, ri) = sdp.tcs[ri]
 
-geta(sdp::SparseSDP, ri, bi::Int) = sdp
+geta(sdp::SparseSDP, ri, bi) = sdp
 
 setb!{T<:Number}(sdp::SparseSDP{T}, ri, v::T) = sdp.bs[ri] = v
 
@@ -196,6 +200,34 @@ function getbvec{T<:Number}(sdp::SparseSDP{T})
     end
     l
 end
+
+
+
+
+
+
+function blocksizes(sdp::SparseSDP)
+    blockdict = Dict{Any,Set}()
+    for (bi, block) in sdp.c
+        indices = get(blockdict, bi, Set())
+        add_each!(indices, block.indices)
+        blockdict[bi] = indices
+    end
+    for a in values(sdp.as)
+        for (bi, block) in a
+            indices = get(blockdict, bi, Set())
+            add_each!(indices, block.indices)
+            blockdict[bi] = indices
+        end
+    end
+    blocksizedict = Dict{Any,Int}()
+    for (bi, entries) in blockdict
+        blocksizedict[bi] = length(entries)
+    end
+    blocksizedict
+end
+
+
  
 function nextavailable(s::Set{Int})
     i = 1
@@ -205,21 +237,25 @@ function nextavailable(s::Set{Int})
     i
 end
 
-function normalizerindices!(sdp::SparseSDP)
+
+
+
+
+function normalize_constraint_indices!(sdp::SparseSDP)
     integerindices = Set{Int}()
     strangeindices = Set()
 
     for ri in keys(sdp.bs)
         if isa(ri, Int)
-            add!(integerindices, ri)
+	        add!(integerindices, ri)
         else
-            add!(strangeindices, ri)
+	        add!(strangeindices, ri)
         end
     end
 
     for ri in keys(sdp.as)
         if isa(ri, Int)
-            add!(integerindices, ri)
+	        add!(integerindices, ri)
         else
             add!(strangeindices, ri)
         end
@@ -227,104 +263,102 @@ function normalizerindices!(sdp::SparseSDP)
 
     for strangeindex in strangeindices
         integerindex = nextavailable(integerindices)
-        used = false
-        if has(sdp.bs, strangeindex)
-            v = sdp.bs[strangeindex]
-            delete!(sdp.bs, strangeindex)
-            sdp.bs[integerindex] = v
-            used = true
-        end
-        if has(sdp.as, strangeindex)
-            m = sdp.as[strangeindex]
-            delete!(sdp.as, strangeindex)
-            sdp.as[integerindex] = m
-            used = true
-        end
-        if used
-            add!(integerindices, integerindex)
-        end
-    end
+	    used = false
+	    if has(sdp.bs, strangeindex)
+	        v = sdp.bs[strangeindex]
+	        delete!(sdp.bs, strangeindex)
+	        sdp.bs[integerindex] = v
+	        used = true
+	    end
+	    if has(sdp.as, strangeindex)
+    	    m = sdp.as[strangeindex]
+	        delete!(sdp.as, strangeindex)
+	        sdp.as[integerindex] = m
+	        used = true
+	    end
+	    if used
+	        add!(integerindices, integerindex)
+	    end
+    end 
 end
 
-function normalizematrixindices!(ms::Vector{SparseSymmetricMatrix})
-    strangeindices = Set()
+function normalize_matrix_indices!(sdp::SparseSDP)
+    for blockindex in keys(blocksizes(sdp))
+        ms = Array(SparseSymmetricMatrix, length(sdp.as) + 1)
+        ms[1] = sdp.c[blockindex]
+        ms[2:end] = [x[blockindex] for x in values(sdp.as)]
+        
+        integerindices = Set{Int}()
+        strangeindices = Set()
     
-    for m in ms
-        for (i, j) in keys(m.entries)
-            if !isa(i, Int)
-                add!(strangeindices, i)
-            end
-            if !isa(j, Int)
-                add!(strangeindices, i)
+        for m in ms
+            for i in indices(m)
+                add!(isa(i, Int) ? integerindices : strangeindices, i)
             end
         end
+    
+        for strangeindex in strangeindices
+            integerindex = nextavailable(integerindices)
+            add!(integerindices, integerindex)
+            for m in ms
+                for ((i, j), v) in entries(m)
+                    if i == j == strangeindex
+                        delete!(m.entries, (i, j))
+                        m[integerindex, integerindex] = v
+                    elseif i == strangeindex
+                        delete!(m.entries, (i, j))
+                        m[integerindex, j] = v
+                    elseif j == strangeindex
+                        delete!(m.entries, (i, j))
+                        m[i, integerindex] = v
+                    end
+                end
+            end
+        end             
+    end
+end
+    
+function normalize_block_indices!(sdp::SparseSDP)   
+    strangeindices = Set()
+    integerindices = Set{Int}()
+     
+    for blockindex in keys(sdp.c.blocks)
+        add!(isa(blockindex, Int) ? integerindices : strangeindices, blockindex)
+    end
+     
+    for blockmatrix in values(sdp.as)
+       for blockindex in keys(blockmatrix.blocks)
+           add!(isa(blockindex, Int) ? integerindices :strangeindices, blockindex)
+       end
     end
     
     for strangeindex in strangeindices
-        idx = smallestavailableindex(ms)
-        for m in ms
-            for ((i, j), v) in m.entries
-                swap = false
-                if i == strangeindex
-                    ni = idx
-                    swap = true
-                else
-                    ni = i
-                end
-                if j == strangeindex
-                    nj = idx
-                    swap = true
-                else
-                    nj = j
-                end
-                if swap
-                    delete!(m.entries, (i, j))
-                    m[ni, nj] = v
-                end
+        if has(sdp.c.blocks, strangeindex)
+            v = sdp.c.blocks[strangeindex]
+            delete!(sdp.c.blocks, strangeindex)
+            sdp.c.blocks[nextavailable(integerindices)] = v
+        end
+        for blockmatrix in values(sdp.as)
+            if has(blockmatrix.blocks, strangeindex)
+                v = blockmatrix.blocks[strangeindex]
+                delete!(blockmatrix.blocks, strangeindex)
+                blockmatrix.blocks[nextavailable(integerindices)] = v
             end
         end
-    end             
-end
-    
-function normalize!(sdp::SparseSDP)
-    normalizerindices!(sdp)
-    for i = 1:length(blocksizes(sdp))
-        v = Array(SparseSymmetricMatrix, length(sdp.as) + 1)
-        v[1] = sdp.c[i]
-        v[2:end] = [x[i] for x in values(sdp.as)]
-        normalizematrixindices!(v)
     end
 end
 
-
-    
-
-    
-
-
-function addblocksizes(bsizes::Dict{Int,Int}, m::SparseSymmetricBlockMatrix)
-    for (bi, block) in m.blocks
-        s = size(block)
-        if get(bsizes, bi, 0) <= s
-            bsizes[bi] = s
-        end
-    end
-    bsizes
+function normalize_indices!(sdp::SparseSDP)
+    normalize_block_indices!(sdp)
+    normalize_constraint_indices!(sdp)
+    normalize_matrix_indices!(sdp)
 end
 
-blocksizes(m::SparseSymmetricBlockMatrix) = addblocksizes(Dict{Int,Int}(), m)
 
-function blocksizes(sdp::SparseSDP)
-    bsizes = blocksizes(sdp.c)
-    for bm in values(sdp.as)
-        addblocksizes(bsizes, bm)
-    end
-    bsizesvector = zeros(Int, max(0, keys(bsizes)...))
-    for (bi, bsize) in bsizes
-        bsizesvector[bi] = bsize
-    end
-    bsizesvector
-end
+
+
+
+
 
 function m(sdp::SparseSDP)
     v = 0
@@ -342,7 +376,8 @@ function m(sdp::SparseSDP)
 end
 
 function writesdpasparse(io::IO, sdp::SparseSDP)
-    bsizes = blocksizes(sdp)    
+    normalize_indices!(sdp)
+    bsizes = values(blocksizes(sdp))    
 
     println(io, m(sdp))
     println(io, length(bsizes))
@@ -402,7 +437,6 @@ function readsdpasparse(io::IO)
     
     s = 1
     for l in readlines(io)
-        println(l)
         if !beginswith(l, '#')
             if s == 4
                 t = split(l) 
@@ -431,16 +465,16 @@ end
 
 
 function show{T<:Number}(io::IO, sdp::SparseSDP{T})
-    bsizes = blocksizes(sdp)
-    nr = nrels(sdp)
-    
-    print(io, "SparseSDP with blocksizes ")
-    println(io, bsizes)
-    
-    for i in 0:nr
-        println(io, "Relation $i with right hand side $(get(sdp.rhs, i, zero(T))): ")
-        
-    end
+#    bsizes = blocksizes(sdp)
+#    nr = nrels(sdp)
+#    
+#    print(io, "SparseSDP with blocksizes ")
+#    println(io, bsizes)
+#    
+#    for i in 0:nr
+#        println(io, "Relation $i with right hand side $(get(sdp.rhs, i, zero(T))): ")
+#        
+#    end
 end
 
 
@@ -494,9 +528,8 @@ function solve(sdp::SparseSDP, solver::SDPAGEN)
 end
 
 function solve(sdp::SparseSDP, solver::CSDP)
-    normalize!(sdp)
+    normalize_indices!(sdp)
     datafname, dataio = mktemp()
-    println(datafname)
     writesdpasparse(dataio, sdp)
     flush(dataio)    
     for l in eachline(`$(solver.executable) $datafname /dev/null`)
