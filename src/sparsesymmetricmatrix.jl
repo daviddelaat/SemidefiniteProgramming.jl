@@ -4,10 +4,13 @@ type SparseSymmetricMatrix{T<:Number,I}
 end
 
 SparseSymmetricMatrix(T::Type, I::Type) = SparseSymmetricMatrix{T,I}(Dict{(I,I),T}(), Set{I}())
+
 SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix(T, Any)
+
 SparseSymmetricMatrix() = SparseSymmetricMatrix(Float64)
 
 entries(m::SparseSymmetricMatrix) = m.entries
+
 indices(m::SparseSymmetricMatrix) = m.indices
 
 function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, v::T, i, j)
@@ -50,7 +53,9 @@ function getindex{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, i, j)
 end
 
 start(m::SparseSymmetricMatrix) = start(m.entries)
+
 done(m::SparseSymmetricMatrix, state) = done(m.entries, state)
+
 next(m::SparseSymmetricMatrix, state) = next(m.entries, state)
 
 function size(m::SparseSymmetricMatrix)
@@ -61,4 +66,14 @@ function size(m::SparseSymmetricMatrix)
         add!(js, j)
     end
     return max(length(is), length(js))
+end
+
+copy(m::SparseSymmetricMatrix) = SparseSymmetricMatrix(copy(entries(m)), copy(indices(m)))
+
+function *{T,I}(m::SparseSymmetricMatrix{T,I}, x::T)
+    p = copy(m)
+    for k in keys(entries(m))
+        entries(p)[k] *= x
+    end
+    p
 end

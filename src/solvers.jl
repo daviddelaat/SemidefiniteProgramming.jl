@@ -55,7 +55,7 @@ end
 function solve(sdp::SparseSDP, solver::CSDP)
     sdp = copy(sdp)
     if !ismaximizationproblem(sdp)
-        obj(sdp) = -obj(sdp)
+        sdp.obj = sdp.obj * -1.0
     end
     normalize_indices!(sdp)
     datafname, dataio = mktemp()

@@ -5,10 +5,10 @@ type SparseSDP{T<:Number,I}
     maximize::Bool
 end
 
-SparseSDP(T::Type, I; maximize=true) = SparseSDP(SparseSymmetricBlockMatrix(T), 
-                                  Dict{I,SparseSymmetricBlockMatrix{T}}(),
-                                  Dict{I,T}(),
-                                  maximize)
+SparseSDP(T::Type, I; maximize=true) = SparseSDP(SparseSymmetricBlockMatrix(T),
+                                                 Dict{I,SparseSymmetricBlockMatrix{T}}(),
+                                                 Dict{I,T}(),
+                                                 maximize)
 
 SparseSDP(T::Type; maximize=true) = SparseSDP(T, Any, maximize=maximize)
 
@@ -32,14 +32,14 @@ end
 
 function setobj!{T<:Number}(sdp::SparseSDP{T}, bi, m::Matrix{T})
     n = size(m)[1]
-    for i = 1:n
-        for j = 1:n
+    for j = 1:n
+        for i = 1:j
             if m[i, j] != zero(T)
                 setobj!(sdp, bi, i, j, m[i, j])
             end
         end
     end
-end             
+end
 
 obj(sdp::SparseSDP) = sdp.obj
 
@@ -52,6 +52,16 @@ function setcon!{T<:Number}(sdp::SparseSDP{T}, ri, bi, i, j, v::T)
         a = SparseSymmetricBlockMatrix(T)
         a[bi, i, j] = v
         cons(sdp)[ri] = a
+    end
+end
+
+function setcon!{T<:Number}(sdp::SparseSDP{T}, ri, bi, m::AbstractMatrix{T})
+    for i = 1:size(m, 1)
+        for j = 1:size(m, 2)
+            if m[i, j] != zero(T)
+                setcon!(sdp, ri, bi, i, j, m[i, j])
+            end
+        end
     end
 end
 

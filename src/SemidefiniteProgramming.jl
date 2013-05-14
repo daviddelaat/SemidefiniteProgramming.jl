@@ -9,7 +9,8 @@ import
     Base.start,
     Base.next,
     Base.done,
-    Base.copy
+    Base.copy,
+    Base.(*)
     
 export 
     SparseSDP,
