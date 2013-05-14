@@ -15,7 +15,7 @@ This problem can be modelled by constructing a sparse semidefinite program with
 
 ```julia
     using SemidefiniteProgramming
-    sdp = SparseSDP() 
+    sdp = SparseSDP(maximize=true) 
 ```
 
 and then setting the nonzero scalars and the nonzero entries of the matrices. The most basic way to do this is as follows: For the scalars `b_i` use
@@ -74,7 +74,7 @@ To solve this we use
 ```julia
 using SemidefiniteProgramming
 
-sdp = SparseSDP()
+sdp = SparseSDP(maximize=true)
 
 setobj!(sdp, 1, 1, 1, 1.0)
 setobj!(sdp, 2, 1, 1, 2.0)
