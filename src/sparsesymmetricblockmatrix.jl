@@ -31,3 +31,5 @@ getindex{T}(bm::SparseSymmetricBlockMatrix{T}, bi) = get(blocks(bm), bi, SparseS
 start(m::SparseSymmetricBlockMatrix) = start(blocks(m))
 next(m::SparseSymmetricBlockMatrix, state) = next(blocks(m), state)
 done(m::SparseSymmetricBlockMatrix, state) = done(blocks(m), state)
+
+copy(m::SparseSymmetricBlockMatrix) = SparseSymmetricBlockMatrix(copy(blocks(m)))

@@ -8,10 +8,13 @@ import
     Base.size,
     Base.start,
     Base.next,
-    Base.done
+    Base.done,
+    Base.copy
     
 export 
     SparseSDP,
+    ismaximizationproblem,
+    setmaximizationproblem!,
     setobj!,
     obj,
     setrhs!,
