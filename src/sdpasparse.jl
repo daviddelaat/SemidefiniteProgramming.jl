@@ -1,18 +1,16 @@
 function writesdpasparse(io::IO, sdp::SparseSDP)
     normalize_indices!(sdp)
     
-    bsizes = collect(values(blocksizes(sdp)))
+    bsizes = blocksizes(sdp)
 
     println(io, ncons(sdp))
     println(io, length(bsizes))
     
-    for b in bsizes[1:end-1]
-        print(io, b)
+    for i = 1:length(bsizes)
+        print(io, bsizes[i])
         print(io, ' ')
     end
-    if length(bsizes) > 0
-        println(io, bsizes[end])
-    end
+    println(io)
     
     rhs = rhsdense(sdp)
     for r in rhs[1:end-1]
