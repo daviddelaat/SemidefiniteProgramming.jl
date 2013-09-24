@@ -1,11 +1,14 @@
 function writesdpasparse(io::IO, sdp::SparseSDP)
-    normalize_indices!(sdp)
+    sdp = normalize(sdp)
+    
+    if !ismaximizationproblem(sdp)
+        sdp.obj = -1.0 * sdp.obj
+    end
     
     bsizes = blocksizes(sdp)
 
     println(io, ncons(sdp))
     println(io, length(bsizes))
-    
     for i = 1:length(bsizes)
         print(io, bsizes[i])
         print(io, ' ')

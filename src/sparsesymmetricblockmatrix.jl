@@ -36,10 +36,10 @@ done(m::SparseSymmetricBlockMatrix, state) = done(blocks(m), state)
 
 copy(m::SparseSymmetricBlockMatrix) = SparseSymmetricBlockMatrix(copy(blocks(m)))
 
-function *{T,I}(m::SparseSymmetricBlockMatrix{T,I}, x::T)
+function *{T,I}(x::T, m::SparseSymmetricBlockMatrix{T,I})
     p = SparseSymmetricBlockMatrix(T, I)
     for k in keys(blocks(m))
-        p[k] = m[k] * x
+        p[k] = x * m[k]
     end
     p
 end

@@ -2,34 +2,44 @@ abstract SDPSolver
 
 verbose(solver::SDPSolver) = solver.verbose
 
+
 abstract SDPAGEN <: SDPSolver
+
+executable(solver::SDPAGEN) = solver.executable
+
 
 immutable SDPA <: SDPAGEN
     speed::Int
     executable::ASCIIString
+    verbose::Bool
 end
 
-SDPA{T<:Integer}(speed::T) = SDPA(speed, "sdpa")
+SDPA(; speed::Integer=0, 
+       executable::ASCIIString="sdpa", 
+       verbose::Bool=false) = SDPA(speed, executable, verbose)
 
-SDPA() = SDPA(0)
 
 immutable SDPAQD <: SDPAGEN
     speed::Int
     executable::ASCIIString
+    verbose::Bool
 end
 
-SDPAQD{T<:Integer}(speed::T) = SDPAQD(speed, "sdpa_qd")
+SDPAQD(; speed::Integer=0, 
+         executable::ASCIIString="sdpa_qd", 
+         verbose::Bool=false) = SDPAQD(speed, executable, verbose)
 
-SDPAQD() = SDPAQD(0)
 
 immutable SDPAGMP <: SDPAGEN
     speed::Int
     executable::ASCIIString
+    verbose::Bool
 end
 
-SDPAGMP(speed::Int) = SDPAGMP(speed, "sdpa_gmp")
+SDPAGMP(; speed::Integer=0, 
+          executable::ASCIIString="sdpa_gmp", 
+          verbose::Bool=false) = SDPAGMP(speed, executable, verbose)
 
-SDPAGMP() = SDPAGMP(0)
 
 immutable CSDP <: SDPSolver
     executable::ASCIIString
@@ -38,14 +48,25 @@ end
 
 CSDP(; executable="csdp", verbose=false) = CSDP(executable, verbose)
 
+executable(solver::CSDP) = solver.executable
+
+
+
 function solve(sdp::SparseSDP, solver::SDPAGEN)
     datafname, dataio = mktemp()
+    if verbose(solver)
+        println("Data filename: $datafname")
+    end
     writesdpasparse(dataio, sdp)
     flush(dataio)
     for l in eachline(`$(solver.executable) -ds $datafname -o /dev/null`)
+        if verbose(solver)
+            println(l)
+        end
         if beginswith(l, "objValPrimal = ")
             close(dataio)
-            return float(split(l, " = ")[2])
+            f = float(split(l, " = ")[2])
+            return ismaximizationproblem(sdp) ? f : -f
         end      
     end
     close(dataio)
@@ -53,11 +74,6 @@ function solve(sdp::SparseSDP, solver::SDPAGEN)
 end
 
 function solve(sdp::SparseSDP, solver::CSDP)
-    sdp = copy(sdp)
-    if !ismaximizationproblem(sdp)
-        sdp.obj = sdp.obj * -1.0
-    end
-    normalize_indices!(sdp)
     datafname, dataio = mktemp()
     if verbose(solver)
         println("Data filename: $datafname")

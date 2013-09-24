@@ -30,8 +30,8 @@ function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, v::T, i, j)
         entries(m)[(i, j)] = v
         entries(m)[(j, i)] = v
     end
-    add!(indices(m), i)
-    add!(indices(m), j)
+    push!(indices(m), i)
+    push!(indices(m), j)
 end
 
 function getindex{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, i, j)
@@ -70,10 +70,45 @@ end
 
 copy(m::SparseSymmetricMatrix) = SparseSymmetricMatrix(copy(entries(m)), copy(indices(m)))
 
-function *{T,I}(m::SparseSymmetricMatrix{T,I}, x::T)
+function *{T,I}(x::T, m::SparseSymmetricMatrix{T,I})
     p = copy(m)
     for k in keys(entries(m))
         entries(p)[k] *= x
     end
     p
+end
+
+function delete!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, i, j)
+    if method_exists(isless, (I, I))
+        if i <= j
+            delete!(entries(m), (i, j))
+        else
+            delete!(entries(m), (j, i))
+        end
+    elseif method_exists(hash, (I,)) && method_exists(hash, (I,)) 
+        if hash(i) <= hash(j)
+            delete!(entries(m), (i, j))
+        else
+            delete!(entries(m), (j, i))
+        end
+    else
+        delete!(entries(m), (i, j))
+        delete!(entries(m), (j, i))
+    end
+    igone = true
+    jgone = true
+    for (ti, tj) in keys(entries(m))
+        if i == ti
+            igone = false
+        end
+        if j == tj
+            jgone = false
+        end
+    end
+    if igone
+        delete!(indices(m), i)
+    end
+    if jgone && contains(indices(m), j)
+        delete!(indices(m), j)
+    end
 end
