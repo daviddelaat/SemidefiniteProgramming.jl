@@ -41,3 +41,12 @@ function *{T}(x::T, m::SparseSymmetricBlockMatrix{T})
     end
     p
 end
+
+function show{T<:Number}(io::IO, m::SparseSymmetricBlockMatrix{T})
+    println(io, typeof(m))
+    for (blockindex, matrix) in blocks(m)
+        for ((i, j), v) in matrix.entries
+            println(io, "$blockindex\t$i\t$j\t$v")
+        end
+    end
+end

@@ -11,14 +11,14 @@ entries(m::SparseSymmetricMatrix) = m.entries
 
 indices(m::SparseSymmetricMatrix) = m.indices
 
-function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T}, v::T, i::I, j::I)
-    if method_exists(isless, (I, I))
+function setindex!{T<:Number}(m::SparseSymmetricMatrix{T}, v::T, i, j)
+    if method_exists(isless, (typeof(i), typeof(j)))
         if i <= j
             entries(m)[(i, j)] = v
         else
             entries(m)[(j, i)] = v
         end
-    elseif method_exists(hash, (I,)) && method_exists(hash, (I,)) 
+    elseif method_exists(hash, (typeof(i),)) && method_exists(hash, (typeof(j),)) 
         if hash(i) <= hash(j)
             entries(m)[(i, j)] = v
         else
@@ -32,14 +32,14 @@ function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T}, v::T, i::I, j::I)
     push!(indices(m), j)
 end
 
-function getindex{T<:Number,I}(m::SparseSymmetricMatrix{T}, i::I, j::I)
-    if method_exists(isless, (I, I))
+function getindex{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
+    if method_exists(isless, (typeof(i), typeof(j)))
         if i <= j
             get(m.entries, (i, j), zero(T))
         else
             get(m.entries, (j, i), zero(T))
         end
-    elseif method_exists(hash, (I,)) && method_exists(hash, (I,)) 
+    elseif method_exists(hash, (typeof(i),)) && method_exists(hash, (typeof(j),)) 
         if hash(i) <= hash(j)
             get(m.entries, (i, j), zero(T))
         else
@@ -76,14 +76,14 @@ function *{T<:Number}(x::T, m::SparseSymmetricMatrix{T})
     p
 end
 
-function delete!{T<:Number,I}(m::SparseSymmetricMatrix{T}, i::I, j::I)
-    if method_exists(isless, (I, I))
+function delete!{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
+    if method_exists(isless, (typeof(i), typeof(j)))
         if i <= j
             delete!(entries(m), (i, j))
         else
             delete!(entries(m), (j, i))
         end
-    elseif method_exists(hash, (I,)) && method_exists(hash, (I,)) 
+    elseif method_exists(hash, (typeof(i),)) && method_exists(hash, (typeof(j),)) 
         if hash(i) <= hash(j)
             delete!(entries(m), (i, j))
         else

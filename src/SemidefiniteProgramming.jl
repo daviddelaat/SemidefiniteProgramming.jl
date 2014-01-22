@@ -30,8 +30,7 @@ export
     readsdpasparse,
     
     SparseSDPSolution,
-    primalobjective,
-    dualobjective,
+    dualobj,
     primalmatrix,
     dualvector,
     dualmatrix,

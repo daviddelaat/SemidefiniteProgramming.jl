@@ -59,18 +59,23 @@ function solve(sdp::SparseSDP, solver::SDPAGEN)
     end
     writesdpasparse(dataio, sdp)
     flush(dataio)
+    primalobjective = NaN
+    dualobjective = NaN
     for l in eachline(`$(executable(solver)) -ds $datafname -o /dev/null`)
         if verbose(solver)
-            println(l)
+            print(l)
         end
         if beginswith(l, "objValPrimal = ")
-            close(dataio)
             f = float(split(l, " = ")[2])
-            return ismaximizationproblem(sdp) ? f : -f
+            primalobjective = ismaximizationproblem(sdp) ? f : -f
+        end
+        if beginswith(l, "objValDual = ")
+            f = float(split(l, " = ")[2])
+            dualobjective = ismaximizationproblem(sdp) ? f : -f
         end      
     end
     close(dataio)
-    nothing
+    SparseSDPSolution(primalobjective, dualobjective) 
 end
 
 function solve(sdp::SparseSDP, solver::CSDP)
@@ -89,7 +94,7 @@ function solve(sdp::SparseSDP, solver::CSDP)
     dualobjective = NaN
     for l in eachline(`$(executable(solver)) $datafname $outputfname`)
         if verbose(solver)
-            println(l)
+            print(l)
         end
         if beginswith(l, "Primal objective value: ")
             f = float(split(l, ": ")[2])

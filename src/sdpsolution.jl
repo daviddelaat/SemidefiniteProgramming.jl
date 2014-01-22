@@ -1,6 +1,6 @@
 type SparseSDPSolution{T<:Number}
-    primalobjective::T
-    dualobjective::T
+    obj::T
+    dualobj::T
     primalmatrix::SparseSymmetricBlockMatrix{T}
     dualvector::Dict{Any,T}
     dualmatrix::SparseSymmetricBlockMatrix{T}
@@ -10,19 +10,19 @@ SparseSDPSolution(T) = SparseSDPSolution(zero(T), zero(T), Dict(), Dict(), Dict(
 
 SparseSDPSolution() = SparseSDPSolution(Float64)
 
-SparseSDPSolution{T<:Number}(primalobjective::T, dualobjective::T) = SparseSDPSolution{T}(primalobjective, 
-                                                                                          dualobjective, 
-                                                                                          SparseSymmetricBlockMatrix(T), 
-                                                                                          Dict{Any,T}(), 
-                                                                                          SparseSymmetricBlockMatrix(T))
+SparseSDPSolution{T<:Number}(obj::T, dualobj::T) = SparseSDPSolution{T}(obj, 
+                                                                        dualobj, 
+                                                                        SparseSymmetricBlockMatrix(T), 
+                                                                        Dict{Any,T}(), 
+                                                                        SparseSymmetricBlockMatrix(T))
 
-setprimalobjective!{T<:Number}(sol::SparseSDPSolution{T}, v::T) = sol.primalobjective = v
+setobj!{T<:Number}(sol::SparseSDPSolution{T}, v::T) = sol.obj = v
 
-primalobjective(sol::SparseSDPSolution) = sol.primalobjective
+obj(sol::SparseSDPSolution) = sol.obj
 
-setdualobjective!{T<:Number}(sol::SparseSDPSolution{T}, v::T) = sol.dualobjective = v
+setdualobj!{T<:Number}(sol::SparseSDPSolution{T}, v::T) = sol.dualobj = v
 
-dualobjective(sol::SparseSDPSolution) = sol.dualobjective
+dualobj(sol::SparseSDPSolution) = sol.dualobj
 
 primalmatrix(sol::SparseSDPSolution) = sol.primalmatrix
 
