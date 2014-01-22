@@ -10,7 +10,7 @@ SparseSymmetricBlockMatrix() = SparseSymmetricBlockMatrix(Float64)
 
 blocks(m::SparseSymmetricBlockMatrix) = m.blocks
 
-function setindex!{T<:Number,I}(bm::SparseSymmetricBlockMatrix{T,I}, v::T, bi, i, j)
+function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, v::T, bi, i, j)
     if haskey(blocks(bm), bi)
         blocks(bm)[bi][i, j] = v
     else
@@ -20,11 +20,11 @@ function setindex!{T<:Number,I}(bm::SparseSymmetricBlockMatrix{T,I}, v::T, bi, i
     end
 end
 
-function setindex!{T<:Number,I}(bm::SparseSymmetricBlockMatrix{T,I}, m::SparseSymmetricMatrix{T}, bi)
+function setindex!{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, m::SparseSymmetricMatrix{T}, bi)
     blocks(bm)[bi] = m
 end
 
-function getindex(bm::SparseSymmetricBlockMatrix, bi, i, j)
+function getindex{T<:Number}(bm::SparseSymmetricBlockMatrix{T}, bi, i, j)
     get(blocks(bm), bi, SparseSymmetricMatrix(T))[i, j]
 end
 

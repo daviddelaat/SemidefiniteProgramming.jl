@@ -1,6 +1,8 @@
 function writesdpasparse(io::IO, sdp::SparseSDP)
-    sdp = normalize(sdp)
-    
+    if !normalized(sdp)
+        sdp, = normalize(sdp)
+    end
+
     if !ismaximizationproblem(sdp)
         sdp.obj = -1.0 * sdp.obj
     end
@@ -58,7 +60,7 @@ function writesdpasparse(io::IO, sdp::SparseSDP)
 end
 
 function readsdpasparse(io::IO)
-    sdp = SparseSDP()
+    sdp = NormalizedSparseSDP()
     
     s = 1
     for l in readlines(io)

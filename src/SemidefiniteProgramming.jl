@@ -1,7 +1,5 @@
 module SemidefiniteProgramming
 
-using Cartesian
-
 import 
     Base.print, 
     Base.show,
@@ -31,14 +29,19 @@ export
     writesdpasparse,
     readsdpasparse,
     
+    SparseSDPSolution,
+    primalobjective,
+    dualobjective,
+    primalmatrix,
+    dualvector,
+    dualmatrix,
+    
     SDPSolver,
     SDPA,
     SDPAQD,
     SDPAGMP,
     CSDP,
-    solve,
-
-    addsoscon!
+    solve
 
 include("sparsesymmetricmatrix.jl")
 include("sparsesymmetricblockmatrix.jl")
@@ -46,6 +49,6 @@ include("sparsesdp.jl")
 include("normalization.jl")
 include("sdpasparse.jl")
 include("solvers.jl")
-include("sos.jl")
+include("sdpsolution.jl")
 
 end

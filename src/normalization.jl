@@ -16,11 +16,11 @@ function newindex!(oldindex, i::IndexMap)
 end
 
 function normalize(sdp::SparseSDP)
-    newsdp = SparseSDP(maximize=ismaximizationproblem(sdp))
+    newsdp = SparseSDP(maximize=ismaximizationproblem(sdp), normalized=true)
     
     cm = IndexMap()
     bm = IndexMap()
-    em = Dict()
+    ems = Dict{Any,IndexMap}()
     
     for (ri, value) in rhs(sdp)
         newri = newindex!(ri, cm)
@@ -29,12 +29,12 @@ function normalize(sdp::SparseSDP)
     
     for (bi, matrix) in blocks(obj(sdp))
         newbi = newindex!(bi, bm)
-        if !haskey(em, newbi)
-            em[newbi] = IndexMap()
+        if !haskey(ems, newbi)
+            ems[newbi] = IndexMap()
         end
         for ((i, j), v) in entries(matrix)
-            newi = newindex!(i, em[newbi])
-            newj = newindex!(j, em[newbi])
+            newi = newindex!(i, ems[newbi])
+            newj = newindex!(j, ems[newbi])
             setobj!(newsdp, newbi, newi, newj, v)
         end    
     end
@@ -43,16 +43,19 @@ function normalize(sdp::SparseSDP)
         newri = newindex!(ri, cm)
         for (bi, matrix) in blocks(blockmatrix)
             newbi = newindex!(bi, bm)
-            if !haskey(em, newbi)
-                em[newbi] = IndexMap()
+            if !haskey(ems, newbi)
+                ems[newbi] = IndexMap()
             end
             for ((i, j), v) in entries(matrix)
-                newi = newindex!(i, em[newbi])
-                newj = newindex!(j, em[newbi])
+                newi = newindex!(i, ems[newbi])
+                newj = newindex!(j, ems[newbi])
                 setcon!(newsdp, newri, newbi, newi, newj, v)
-            end    
+            end
         end
     end
-
-    newsdp
+    nems = Dict()
+    for (k,v) in ems
+        nems[k] = ems[k].m
+    end
+    newsdp, cm.m, bm.m, nems
 end
