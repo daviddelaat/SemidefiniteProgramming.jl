@@ -100,7 +100,6 @@ function solve(sdp::SparseSDP, solver::CSDP)
             dualobjective = ismaximizationproblem(sdp) ? f : -f
         end
     end
-    println(primalobjective)
     sol = SparseSDPSolution(primalobjective, dualobjective)
     readcsdpoutput!(outputio, sol, cm, bm, ems)
     close(outputio)

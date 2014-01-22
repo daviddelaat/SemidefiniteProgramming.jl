@@ -1,10 +1,8 @@
-type SparseSymmetricBlockMatrix{T<:Number,I}
-    blocks::Dict{I,SparseSymmetricMatrix{T}}
+type SparseSymmetricBlockMatrix{T<:Number}
+    blocks::Dict{Any,SparseSymmetricMatrix{T}}
 end
 
-SparseSymmetricBlockMatrix(T::Type, I) = SparseSymmetricBlockMatrix(Dict{I,SparseSymmetricMatrix{T}}())
-
-SparseSymmetricBlockMatrix(T::Type) = SparseSymmetricBlockMatrix(T, Any)
+SparseSymmetricBlockMatrix(T::Type) = SparseSymmetricBlockMatrix(Dict{Any,SparseSymmetricMatrix{T}}())
 
 SparseSymmetricBlockMatrix() = SparseSymmetricBlockMatrix(Float64)
 
@@ -36,8 +34,8 @@ done(m::SparseSymmetricBlockMatrix, state) = done(blocks(m), state)
 
 copy(m::SparseSymmetricBlockMatrix) = SparseSymmetricBlockMatrix(copy(blocks(m)))
 
-function *{T,I}(x::T, m::SparseSymmetricBlockMatrix{T,I})
-    p = SparseSymmetricBlockMatrix(T, I)
+function *{T}(x::T, m::SparseSymmetricBlockMatrix{T})
+    p = SparseSymmetricBlockMatrix(T)
     for k in keys(blocks(m))
         p[k] = x * m[k]
     end

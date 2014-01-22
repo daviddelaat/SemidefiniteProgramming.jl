@@ -59,7 +59,7 @@ function readcsdpoutput!(io::IO, sol::SparseSDPSolution, cm::Dict, bm::Dict, ems
         rowindex = iems[blockindex][int(ls[3])]
         columnindex = iems[blockindex][int(ls[4])]
         value = float(ls[5])
-        if onetwo == 1
+        if onetwo == 2
             block = get(primalmatrix(sol).blocks, blockindex, SparseSymmetricMatrix())
             block[rowindex, columnindex] = value
             primalmatrix(sol).blocks[blockindex] = block

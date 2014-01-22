@@ -1,11 +1,9 @@
-type SparseSymmetricMatrix{T<:Number,I}
-    entries::Dict{(I, I), T}
-    indices::Set{I}
+type SparseSymmetricMatrix{T<:Number}
+    entries::Dict{(Any, Any), T}
+    indices::Set{Any}
 end
 
-SparseSymmetricMatrix(T::Type, I::Type) = SparseSymmetricMatrix{T,I}(Dict{(I,I),T}(), Set{I}())
-
-SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix(T, Any)
+SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix{T}(Dict{(Any,Any),T}(), Set())
 
 SparseSymmetricMatrix() = SparseSymmetricMatrix(Float64)
 
@@ -13,7 +11,7 @@ entries(m::SparseSymmetricMatrix) = m.entries
 
 indices(m::SparseSymmetricMatrix) = m.indices
 
-function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, v::T, i, j)
+function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T}, v::T, i::I, j::I)
     if method_exists(isless, (I, I))
         if i <= j
             entries(m)[(i, j)] = v
@@ -34,7 +32,7 @@ function setindex!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, v::T, i, j)
     push!(indices(m), j)
 end
 
-function getindex{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, i, j)
+function getindex{T<:Number,I}(m::SparseSymmetricMatrix{T}, i::I, j::I)
     if method_exists(isless, (I, I))
         if i <= j
             get(m.entries, (i, j), zero(T))
@@ -70,7 +68,7 @@ end
 
 copy(m::SparseSymmetricMatrix) = SparseSymmetricMatrix(copy(entries(m)), copy(indices(m)))
 
-function *{T,I}(x::T, m::SparseSymmetricMatrix{T,I})
+function *{T<:Number}(x::T, m::SparseSymmetricMatrix{T})
     p = copy(m)
     for k in keys(entries(m))
         entries(p)[k] *= x
@@ -78,7 +76,7 @@ function *{T,I}(x::T, m::SparseSymmetricMatrix{T,I})
     p
 end
 
-function delete!{T<:Number,I}(m::SparseSymmetricMatrix{T,I}, i, j)
+function delete!{T<:Number,I}(m::SparseSymmetricMatrix{T}, i::I, j::I)
     if method_exists(isless, (I, I))
         if i <= j
             delete!(entries(m), (i, j))

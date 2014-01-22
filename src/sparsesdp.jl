@@ -1,18 +1,16 @@
-type SparseSDP{T<:Number,I}
+type SparseSDP{T<:Number}
     obj::SparseSymmetricBlockMatrix{T}
-    cons::Dict{I,SparseSymmetricBlockMatrix{T}}
-    rhs::Dict{I,T}
+    cons::Dict{Any,SparseSymmetricBlockMatrix{T}}
+    rhs::Dict{Any,T}
     maximize::Bool
     normalized::Bool
 end
 
-SparseSDP(T::Type, I; maximize=true, normalized=false) = SparseSDP(SparseSymmetricBlockMatrix(T),
-                                                 Dict{I,SparseSymmetricBlockMatrix{T}}(),
-                                                 Dict{I,T}(),
-                                                 maximize,
-                                                 normalized)
-
-SparseSDP(T::Type; maximize=true, normalized=false) = SparseSDP(T, Any, maximize=maximize, normalized=normalized)
+SparseSDP(T::Type; maximize=true, normalized=false) = SparseSDP(SparseSymmetricBlockMatrix(T),
+                                                                Dict{Any,SparseSymmetricBlockMatrix{T}}(),
+                                                                Dict{Any,T}(),
+                                                                maximize,
+                                                                normalized)
 
 SparseSDP(; maximize=true, normalized=false) = SparseSDP(Float64, maximize=maximize, normalized=normalized)
 
