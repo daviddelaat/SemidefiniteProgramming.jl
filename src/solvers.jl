@@ -97,11 +97,11 @@ function solve(sdp::SparseSDP, solver::CSDP)
             print(l)
         end
         if beginswith(l, "Primal objective value: ")
-            f = float(split(l, ": ")[2])
+            f = float(strip(split(l, ": ")[2]))
             primalobjective = ismaximizationproblem(sdp) ? f : -f
         end
         if beginswith(l, "Dual objective value: ")
-            f = float(split(l, ": ")[2])
+            f = float(strip(split(l, ": ")[2]))
             dualobjective = ismaximizationproblem(sdp) ? f : -f
         end
     end
