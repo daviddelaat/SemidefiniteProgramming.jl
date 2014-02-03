@@ -97,7 +97,7 @@ println(obj(solve(sdp, CSDP())))
 
 # Solvers
 
-To use a solver construct an immutable solver object with `Solver()` and supply it as the second argument to the `solve` function. The solver objects support the optional named arguments 
+To use a solver construct an immutable solver object with `CSDP()`, `SDPA()`, etc, and supply it as the second argument to the `solve` function. The solver objects support the optional named arguments 
  - `verbose` (print solver output to stdout)
  - `executable` (path to the solver executable)
 
