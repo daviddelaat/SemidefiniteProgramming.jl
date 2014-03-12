@@ -66,11 +66,11 @@ function solve(sdp::SparseSDP, solver::SDPAGEN)
             print(l)
         end
         if beginswith(l, "objValPrimal = ")
-            f = float(split(l, " = ")[2])
+            f = float(strip(split(l, " = ")[2]))
             primalobjective = ismaximizationproblem(sdp) ? f : -f
         end
         if beginswith(l, "objValDual = ")
-            f = float(split(l, " = ")[2])
+            f = float(strip(split(l, " = ")[2]))
             dualobjective = ismaximizationproblem(sdp) ? f : -f
         end      
     end
