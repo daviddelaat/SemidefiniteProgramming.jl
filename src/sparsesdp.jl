@@ -4,13 +4,17 @@ type SparseSDP{T<:Number}
     rhs::Dict{Any,T}
     maximize::Bool
     normalized::Bool
+    freecons::Dict{Any}{Dict{Any}{T}}
+    freeobj::Dict{Any}{T}
 end
 
 SparseSDP(T::Type; maximize=true, normalized=false) = SparseSDP(SparseSymmetricBlockMatrix(T),
                                                                 Dict{Any,SparseSymmetricBlockMatrix{T}}(),
                                                                 Dict{Any,T}(),
                                                                 maximize,
-                                                                normalized)
+                                                                normalized,
+                                                                Dict{Any}{Dict{Any}{T}}(),
+                                                                Dict{Any}{T}())
 
 SparseSDP(; maximize=true, normalized=false) = SparseSDP(Float64, maximize=maximize, normalized=normalized)
 
@@ -47,13 +51,19 @@ obj(sdp::SparseSDP) = sdp.obj
 
 obj(sdp::SparseSDP, bi) = sdp.obj[bi]
 
+freecons(sdp::SparseSDP) = sdp.freecons
+
+freeobj(sdp::SparseSDP) = sdp.freeobj
+
 function setcon!{T<:Number}(sdp::SparseSDP{T}, ri, bi, i, j, v::T)
-    if haskey(cons(sdp), ri)
-        cons(sdp)[ri][bi, i, j] = v
-    else
-        a = SparseSymmetricBlockMatrix(T)
-        a[bi, i, j] = v
-        cons(sdp)[ri] = a
+    if !isapprox(v, 0.0)
+        if haskey(cons(sdp), ri)
+            cons(sdp)[ri][bi, i, j] = v
+        else
+            a = SparseSymmetricBlockMatrix(T)
+            a[bi, i, j] = v
+            cons(sdp)[ri] = a
+        end
     end
 end
 
@@ -66,6 +76,18 @@ function setcon!{T<:Number}(sdp::SparseSDP{T}, ri, bi, m::AbstractMatrix{T})
         end
     end
 end
+
+function setfreecon!{T<:Number}(sdp::SparseSDP{T}, ri, ci, v::T)
+    if !isapprox(v, 0.0)
+        if haskey(D(sdp), ri)
+            freecon(sdp)[ri][ci] = T
+        else
+            freecon(sdp)[ri] = Dict{Any,T}(ci => v)
+        end
+    end
+end
+
+setfreeobj!{T<:Number}(sdp::SparseSDP{T}, ri, v::T) = freeobj(sdp)[ri] = v
 
 cons(sdp::SparseSDP) = sdp.cons
 
