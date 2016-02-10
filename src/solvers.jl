@@ -79,7 +79,7 @@ function solve{T<:Real}(sdp::SparseSDP{T}, solver::SDPAGEN; io::IO=STDOUT, outpu
     SparseSDPSolution(primalobjective, dualobjective) 
 end
 
-function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, ioverbose::IO=STDOUT, outputfname=nothing)
+function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, extraio=nothing, outputfname=nothing)
     sdp, cm, bm, ems = normalize(sdp)
 
     datafname, dataio = mktemp()
@@ -98,10 +98,12 @@ function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, ioverbose::IO=STDOUT
     primalobjective = NaN
     dualobjective = NaN
     for l in eachline(`$(executable(solver)) $datafname $outputfname`)
-        print(io, l)
-        flush(io)
+        if extraio != nothing
+            print(extraio, l)
+            flush(extraio)
+        end
         if verbose(solver)
-            print(ioverbose, l)
+            print(io, l)
         end
         if startswith(l, "Primal objective value: ")
             f = float(strip(split(l, ": ")[2]))
