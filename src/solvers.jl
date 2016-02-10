@@ -52,40 +52,45 @@ executable(solver::CSDP) = solver.executable
 
 
 
-function solve(sdp::SparseSDP, solver::SDPAGEN)
+function solve{T<:Real}(sdp::SparseSDP{T}, solver::SDPAGEN; io::IO=STDOUT, outputfname="output.temp")
     datafname, dataio = mktemp()
     if verbose(solver)
-        println("Data filename: $datafname")
+        println(io, "Data filename: $datafname")
     end
     writesdpasparse(dataio, sdp)
     flush(dataio)
     primalobjective = NaN
     dualobjective = NaN
-    for l in eachline(`$(executable(solver)) -ds $datafname -o /dev/null`)
+   
+    for l in eachline(`$(executable(solver)) -ds $datafname -o $outputfname`)
         if verbose(solver)
-            print(l)
+            print(io, l)
         end
-        if beginswith(l, "objValPrimal = ")
+        if startswith(l, "objValPrimal = ")
             f = float(strip(split(l, " = ")[2]))
             primalobjective = ismaximizationproblem(sdp) ? f : -f
         end
-        if beginswith(l, "objValDual = ")
+        if startswith(l, "objValDual ")
             f = float(strip(split(l, " = ")[2]))
             dualobjective = ismaximizationproblem(sdp) ? f : -f
-        end      
+         end
     end
     close(dataio)
     SparseSDPSolution(primalobjective, dualobjective) 
 end
 
-function solve(sdp::SparseSDP, solver::CSDP)
+function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, ioverbose::IO=STDOUT, outputfname=nothing)
     sdp, cm, bm, ems = normalize(sdp)
 
     datafname, dataio = mktemp()
-    outputfname, outputio = mktemp()
+    if outputfname == nothing
+        outputfname, outputio = mktemp()
+    else
+        outputio = open(outputfname, "w")
+    end
     if verbose(solver)
-        println("Data filename: $datafname")
-        println("Output filename: $outputfname")
+        println(io, "Data filename: $datafname")
+        println(io, "Output filename: $outputfname")
     end
     writesdpasparse(dataio, sdp)
     close(dataio)
@@ -93,14 +98,16 @@ function solve(sdp::SparseSDP, solver::CSDP)
     primalobjective = NaN
     dualobjective = NaN
     for l in eachline(`$(executable(solver)) $datafname $outputfname`)
+        print(io, l)
+        flush(io)
         if verbose(solver)
-            print(l)
+            print(ioverbose, l)
         end
-        if beginswith(l, "Primal objective value: ")
+        if startswith(l, "Primal objective value: ")
             f = float(strip(split(l, ": ")[2]))
             primalobjective = ismaximizationproblem(sdp) ? f : -f
         end
-        if beginswith(l, "Dual objective value: ")
+        if startswith(l, "Dual objective value: ")
             f = float(strip(split(l, ": ")[2]))
             dualobjective = ismaximizationproblem(sdp) ? f : -f
         end

@@ -11,7 +11,9 @@ import
     Base.done,
     Base.copy,
     Base.(*),
-    Base.delete!
+    Base.delete!,
+    Base.(==),
+    Base.isapprox
     
 export 
     SparseSDP,

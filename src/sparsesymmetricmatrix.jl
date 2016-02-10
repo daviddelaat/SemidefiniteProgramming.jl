@@ -1,9 +1,9 @@
 type SparseSymmetricMatrix{T<:Number}
-    entries::Dict{(Any, Any), T}
+    entries::Dict{Tuple{Any, Any}, T}
     indices::Set{Any}
 end
 
-SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix{T}(Dict{(Any,Any),T}(), Set())
+SparseSymmetricMatrix(T::Type) = SparseSymmetricMatrix{T}(Dict{Tuple{Any,Any},T}(), Set())
 
 SparseSymmetricMatrix() = SparseSymmetricMatrix(Float64)
 
@@ -51,9 +51,7 @@ function getindex{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
 end
 
 start(m::SparseSymmetricMatrix) = start(m.entries)
-
 done(m::SparseSymmetricMatrix, state) = done(m.entries, state)
-
 next(m::SparseSymmetricMatrix, state) = next(m.entries, state)
 
 function size(m::SparseSymmetricMatrix)
@@ -109,4 +107,25 @@ function delete!{T<:Number}(m::SparseSymmetricMatrix{T}, i, j)
     if jgone && contains(indices(m), j)
         delete!(indices(m), j)
     end
+end
+
+function ==(A::SparseSymmetricMatrix, B::SparseSymmetricMatrix)
+    A.entries == B.entries && A.indices == B.indices
+end
+
+function isapprox(A::SparseSymmetricMatrix, B::SparseSymmetricMatrix)
+    if indices(A) != indices(B)  
+        return false
+    end
+    for ((ri, ci), v) in A
+        if !isapprox(v, B[ri, ci]) 
+            return false
+        end
+    end
+    for ((ri, ci), v) in B
+        if !isapprox(v, A[ri, ci]) 
+            return false
+        end
+    end
+    true
 end

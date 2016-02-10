@@ -50,3 +50,19 @@ function show{T<:Number}(io::IO, m::SparseSymmetricBlockMatrix{T})
         end
     end
 end
+
+==(A::SparseSymmetricBlockMatrix, B::SparseSymmetricBlockMatrix) = blocks(A) == blocks(B)
+
+function isapprox(A::SparseSymmetricBlockMatrix, B::SparseSymmetricBlockMatrix)
+    for (bi, bm) in A
+        if !isapprox(bm, B[bi])
+            return false
+        end
+    end
+    for (bi, bm) in B
+        if !isapprox(bm, A[bi])
+            return false
+        end
+    end
+    true
+end

@@ -15,8 +15,8 @@ function newindex!(oldindex, i::IndexMap)
     end
 end
 
-function normalize(sdp::SparseSDP)
-    newsdp = SparseSDP(maximize=ismaximizationproblem(sdp), normalized=true)
+function normalize{T}(sdp::SparseSDP{T})
+    newsdp = SparseSDP(T, maximize=ismaximizationproblem(sdp), normalized=true)
     
     cm = IndexMap()
     bm = IndexMap()
