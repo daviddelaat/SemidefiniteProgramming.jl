@@ -83,8 +83,10 @@ function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, extraio=nothing, out
     sdp, cm, bm, ems = normalize(sdp)
 
     datafname, dataio = mktemp()
+    removeoutputfname = false
     if outputfname == nothing
         outputfname, outputio = mktemp()
+        removeoutputfname = true
     else
         outputio = open(outputfname, "w")
     end
@@ -117,5 +119,9 @@ function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, extraio=nothing, out
     sol = SparseSDPSolution(primalobjective, dualobjective)
     readcsdpoutput!(outputio, sol, cm, bm, ems)
     close(outputio)
+    if removeoutputfname 
+        rm(outputfname)
+    end
+    rm(datafname)
     sol   
 end
