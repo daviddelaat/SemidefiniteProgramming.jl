@@ -86,7 +86,6 @@ setcon!(sdp, 1, 1, 1, 1, 1.0)
 setcon!(sdp, 1, 2, 1, 1, 1.0)
 
 setrhs!(sdp, 2, 20.0)
-setcon!(sdp, 2, 1, 1, 1, 1.0)
 setcon!(sdp, 2, 2, 1, 1, 1.0)
 setcon!(sdp, 2, 3, 1, 1, 5.0)
 setcon!(sdp, 2, 3, 1, 2, 2.0)
