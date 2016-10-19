@@ -10,39 +10,39 @@ executable(solver::SDPAGEN) = solver.executable
 
 immutable SDPA <: SDPAGEN
     speed::Int
-    executable::ASCIIString
+    executable::String
     verbose::Bool
 end
 
 SDPA(; speed::Integer=0, 
-       executable::ASCIIString="sdpa", 
+       executable::String="sdpa", 
        verbose::Bool=false) = SDPA(speed, executable, verbose)
 
 
 immutable SDPAQD <: SDPAGEN
     speed::Int
-    executable::ASCIIString
+    executable::String
     verbose::Bool
 end
 
 SDPAQD(; speed::Integer=0, 
-         executable::ASCIIString="sdpa_qd", 
+         executable::String="sdpa_qd", 
          verbose::Bool=false) = SDPAQD(speed, executable, verbose)
 
 
 immutable SDPAGMP <: SDPAGEN
     speed::Int
-    executable::ASCIIString
+    executable::String
     verbose::Bool
 end
 
 SDPAGMP(; speed::Integer=0, 
-          executable::ASCIIString="sdpa_gmp", 
+          executable::String="sdpa_gmp", 
           verbose::Bool=false) = SDPAGMP(speed, executable, verbose)
 
 
 immutable CSDP <: SDPSolver
-    executable::ASCIIString
+    executable::String
     verbose::Bool
 end
 
@@ -79,7 +79,7 @@ function solve{T<:Real}(sdp::SparseSDP{T}, solver::SDPAGEN; io::IO=STDOUT, outpu
     SparseSDPSolution(primalobjective, dualobjective) 
 end
 
-function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, extraio=nothing, outputfname=nothing)
+function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, outputfname=nothing)
     sdp, cm, bm, ems = normalize(sdp)
 
     datafname, dataio = mktemp()
@@ -100,10 +100,6 @@ function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, extraio=nothing, out
     primalobjective = NaN
     dualobjective = NaN
     for l in eachline(`$(executable(solver)) $datafname $outputfname`)
-        if extraio != nothing
-            print(extraio, l)
-            flush(extraio)
-        end
         if verbose(solver)
             print(io, l)
         end
