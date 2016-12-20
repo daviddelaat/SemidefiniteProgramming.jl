@@ -2,6 +2,8 @@
 
 This package provides a Julia interface for low-level modeling of semidefinite programming problems and for solving semidefinite programs with solvers such as SDPA and CSDP.
 
+Maintenance status: Currently no new futures are being developed for this package. Bugs will be fixed and this package will be kept up to date with new Julia releases.
+
 # Introduction
 
 Consider a semidefinite program of the form
