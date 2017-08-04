@@ -1,4 +1,4 @@
-type SparseSDP{T<:Number}
+mutable struct SparseSDP{T<:Number}
     obj::SparseSymmetricBlockMatrix{T}
     cons::Dict{Any,SparseSymmetricBlockMatrix{T}}
     rhs::Dict{Any,T}

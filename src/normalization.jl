@@ -1,4 +1,4 @@
-type IndexMap
+mutable struct IndexMap
     m::Dict
     c::Int
 end

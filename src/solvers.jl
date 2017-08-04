@@ -1,14 +1,13 @@
-abstract SDPSolver
+abstract type SDPSolver end
 
 verbose(solver::SDPSolver) = solver.verbose
 
-
-abstract SDPAGEN <: SDPSolver
+abstract type SDPAGEN <: SDPSolver end
 
 executable(solver::SDPAGEN) = solver.executable
 
 
-immutable SDPA <: SDPAGEN
+struct SDPA <: SDPAGEN
     speed::Int
     executable::String
     verbose::Bool
@@ -19,7 +18,7 @@ SDPA(; speed::Integer=0,
        verbose::Bool=false) = SDPA(speed, executable, verbose)
 
 
-immutable SDPAQD <: SDPAGEN
+struct SDPAQD <: SDPAGEN
     speed::Int
     executable::String
     verbose::Bool
@@ -30,7 +29,7 @@ SDPAQD(; speed::Integer=0,
          verbose::Bool=false) = SDPAQD(speed, executable, verbose)
 
 
-immutable SDPAGMP <: SDPAGEN
+struct SDPAGMP <: SDPAGEN
     speed::Int
     executable::String
     verbose::Bool
@@ -41,7 +40,7 @@ SDPAGMP(; speed::Integer=0,
           verbose::Bool=false) = SDPAGMP(speed, executable, verbose)
 
 
-immutable CSDP <: SDPSolver
+struct CSDP <: SDPSolver
     executable::String
     verbose::Bool
 end
@@ -96,28 +95,31 @@ function solve(sdp::SparseSDP, solver::CSDP; io::IO=STDOUT, outputfname=nothing)
     end
     writesdpasparse(dataio, sdp)
     close(dataio)
-    
     primalobjective = NaN
     dualobjective = NaN
-    for l in eachline(`$(executable(solver)) $datafname $outputfname`)
-        if verbose(solver)
-            print(io, l)
+    try
+        for l in eachline(`$(executable(solver)) $datafname $outputfname`)
+            if verbose(solver)
+                println(io, l)
+            end
+            if startswith(l, "Primal objective value: ")
+                f = float(strip(split(l, ": ")[2]))
+                primalobjective = ismaximizationproblem(sdp) ? f : -f
+            end
+            if startswith(l, "Dual objective value: ")
+                f = float(strip(split(l, ": ")[2]))
+                dualobjective = ismaximizationproblem(sdp) ? f : -f
+            end
         end
-        if startswith(l, "Primal objective value: ")
-            f = float(strip(split(l, ": ")[2]))
-            primalobjective = ismaximizationproblem(sdp) ? f : -f
+        sol = SparseSDPSolution(primalobjective, dualobjective)
+        readcsdpoutput!(outputio, sol, cm, bm, ems)
+        close(outputio)
+        if removeoutputfname 
+            rm(outputfname)
         end
-        if startswith(l, "Dual objective value: ")
-            f = float(strip(split(l, ": ")[2]))
-            dualobjective = ismaximizationproblem(sdp) ? f : -f
-        end
+        rm(datafname)
+        return sol   
+    catch 
+        return nothing          
     end
-    sol = SparseSDPSolution(primalobjective, dualobjective)
-    readcsdpoutput!(outputio, sol, cm, bm, ems)
-    close(outputio)
-    if removeoutputfname 
-        rm(outputfname)
-    end
-    rm(datafname)
-    sol   
 end
