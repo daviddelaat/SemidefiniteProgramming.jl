@@ -1,4 +1,4 @@
-type SparseSymmetricBlockMatrix{T<:Number}
+mutable struct SparseSymmetricBlockMatrix{T<:Number}
     blocks::Dict{Any,SparseSymmetricMatrix{T}}
 end
 

@@ -1,4 +1,4 @@
-type SparseSDPSolution{T<:Number}
+mutable struct SparseSDPSolution{T<:Number}
     obj::T
     dualobj::T
     primalmatrix::SparseSymmetricBlockMatrix{T}
